@@ -1,14 +1,14 @@
 %% platform IWR1642EVM+DCA1000
 %% vital sign monitoring
 %% single target: one male adult, sitting 1.4m from radar, for 51.2 seconds (1024frame)
-%% please check /experimental_settings.jpg
+%% please check ./experimental_settings.jpg
 %% ========================================================================
 clc;
 clear all;
 close all;
 %% =========================================================================
 %% chirp settings
-%% please check /transceiver_settings.png
+%% please check ./transceiver_settings.png
 numADCSamples = 200; % number of ADC samples per chirp
 numADCBits = 16;     % number of ADC bits per sample
 numRX = 4;           % number of receivers
