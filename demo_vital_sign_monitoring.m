@@ -1,6 +1,6 @@
 %% platform IWR1642EVM+DCA1000
 %% vital sign monitoring
-%% single target: one male adult, sitting 1.4m from radar, 51.2 seconds(1024frame)
+%% single target: one male adult, sitting 1.4m from radar, for 51.2 seconds (1024frame)
 %% please check /experimental_settings.jpg
 %% ========================================================================
 clc;
@@ -16,7 +16,7 @@ numTX = 2;           % number of transceiver
 numLanes = 2;        % do not change. number of lanes is always 2
 isReal = 0;          % set to 1 if real only data, 0 if complex data0
 chirpLoop = 2;       % number of chirps per frame
-Fs=4e6;              %s ampling rate of ADC
+Fs=4e6;              % sampling rate of ADC
 c=3*1e8;             % speed of light
 ts=numADCSamples/Fs; % ADC sampling time 
 slope=70e12;         % slope of the chirp 
@@ -125,10 +125,13 @@ for i = 1:numChirps
     end
 end
 
-% Range-bin selecting, find the range bin(frequency) with the greatest total amp, to be the range bin of the human target
-% this Range-bin selecting algorithm is very simple and limited.
+% Range-bin selecting 
+% a simplest algorithm: find the range bin(frequency) with the largest total amp, to be the range bin of the human target
+% this Range-bin selecting algorithm is very rough and sensitive to clutter, such as furniture or obstacles.
+% the Range-bin is correctly selected only when no strong clutter existed in the monitoring area.
+% Range-bin selecting algorithm is one of the problems that I'm going to focus on in PhD study.
 for j = 1:RangFFT
-    if((j*detaR)<1.7 &&(j*detaR)>1.2) 
+    if((j*detaR)<1.7 &&(j*detaR)>1.2)      % this algorithm only works in clear area
         for i = 1:numChirps  % sum up amp of each range bin(frequency)
             fft_data_last(j) = fft_data_last(j) + fft_data_abs(i,j);
         end
@@ -145,7 +148,7 @@ angle_fft_last = angle_fft(:,max_num);
 
 %% phase unwrapping.
 %% Since the phase value is between [-pi, pi], and we need phase unwrapping to obtain the actual displacement curve,
-%% whenever the phase difference between continuous values is greater than or less than ¡À pi, 
+%% whenever the phase difference between continuous values is greater than pi or less than -pi, 
 %% the phase unwrapping is obtained by subtracting or adding 2pi from the phase.
 
 n = 1;
@@ -172,7 +175,7 @@ xlabel('time(frame)');
 ylabel('phase');
 title('phase waveform');
 
-%% Bandpass Filter 0.1-0.6hz£¬for respiration signal
+%% Bandpass Filter 0.1-0.6hz for respiration signal
 fs =20; % sampling rate of vital sign signal (rate of the frame)
 
 COE1=respiration_filter;
@@ -202,6 +205,9 @@ end
 breath_count =(fs*(numChirps/2-(breath_index-1))/numChirps)*60; % respiration per minute
 
 %% Bandpass Filter 0.8-2hz, for heartbeat signal
+%% heartbeat signal filtered by bandpass filter, include 2th or 3th harmonics interference of respiration signal
+%% the true heartbeat signal is easily submergered by harmonics when respiration movement is strong and fast.
+%% more sophisticated methods to mitigate respiration harmonics in heartbeat signal will be explored in the future study
 COE2=heartbeat_filter;
 heart_data = filter(COE2,angle_fft_last2); 
 figure;
@@ -230,6 +236,6 @@ heart_count =(fs*(numChirps/2-(heart_index-1))/numChirps)*60;% heartbeat per min
 
 % 1024 frames£¬51.2s£¬
 
-disp(['respiration per minute£º',num2str(breath_count),'  heartbeat per minute£º',num2str(heart_count)])
+disp(['respiration per minute',num2str(breath_count),'  heartbeat per minute',num2str(heart_count)])
 
 %% END &thank YOU !
